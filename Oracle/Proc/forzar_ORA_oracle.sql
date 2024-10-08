@@ -1,0 +1,1 @@
+execute sys.dbms_system.ksdwrt(2,to_char(sysdate)|| ' ORA-01033: Testing, Please Ignore!');

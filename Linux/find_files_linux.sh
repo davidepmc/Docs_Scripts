@@ -1,0 +1,1 @@
+find . -type f -name *.aud -mtime +30 -exec rm -rf {} \; 

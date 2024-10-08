@@ -1,0 +1,44 @@
+Pasos para cambiar la password de sys.
+
+----ASEGURAR QUE TENEMOS LA PWD ORIGINAL DE SYS----
+
+1º Parar los servicios de aplicado de las standbys
+	*en la standby:
+		alter database recover managed standby database cancel;
+	*en la primary:
+		alter system set log_archive_dest_state_x=defer;
+
+2º Renombrar los ficheros ORAPWD en todas las maquinas a .old
+
+3º Crear el fichero ORAPWD o modificar la contraseña de SYS
+	a) orapwd file = orapwETP.ora password = sonr11sa entries = 10
+	b) alter user sys identified by sonr11sa
+
+4º Copiar el nuevo fichero ORAPWD al resto de las máquinas.
+
+5º Levantar los servicios de aplicado de las standbys
+	*en la standby:
+		alter database recover managed standby database disconnect from session;
+	*en la primary
+		alter system set log_archive_dest_state_x=enable;
+		
+					
+					
+					
+					ROLLBACK
+
+1º Parar los servicios de aplicado de las standbys
+	*en la standby:
+		alter database recover managed standby database cancel;
+	*en la primary:
+		alter system set log_archive_dest_state_x=defer;
+
+2º Eliminar los ficheros ORAPW nuevos.
+
+3º Volver a renombrar los ficheros .old a su nombre original.
+
+4º Levantar los servicios de aplicado de las standbys
+	*en la standby:
+		alter database recover managed standby database disconnect from session;
+	*en la primary
+		alter system set log_archive_dest_state_x=enable;

@@ -1,0 +1,213 @@
+FYI.
+
+In most cases, the deadlock is caused by a problem in the application. It
+can be traced back to a programming error.
+
+Under certain conditions, a deadlock may also be triggered by Oracle.
+This deadlock has the following cause:
+
+If a data record is locked in the database, this lock information is
+written to the block. The space provided in the block header is used for
+this. The space is defined when the table is created with the parameters
+INITRANS and maxtrans. If a block becomes too full, the database cannot
+allocate any more space to store this block and must wait for memory space
+in the corresponding block. As a result, row level locking can become block
+level locking.
+
+If some parallel scripts now lock a large number of data records that are
+in the same block, two or more of the scripts may sometimes cause a
+deadlock, not because they lock the same data record, but because no
+additional memory space can be allocated for the lock.
+
+To find out whether this is a deadlock in Oracle, you need to examine the
+trace file written by Oracle in a lot more detail. 
+
+Open the file - the 'deadlock graph' appears on the first two pages.
+The deadlock graph is as follows:
+---------Blocker(s)-------- ---------Waiter(s)-----
+Resource Name process sess. holds waits process sess. hold waits
+TX-00090004-00011000 43 39 X 35 46 S
+TX-0006001a-0001397d 35 46 X 43 39 S
+Here, the last column that specifies the Waits as type 'S' is important.
+If an 'X' is displayed instead in the graph, it is NOT an Oracle deadlock.
+
+Which object is it?
+After the deadlock graph, the system immediately displays further
+information on the object for which the deadlock was generated:
+Rows waited on:
+Session 39: obj - rowid = 000016F2 - 0003BC42.0000.0093
+Session 46: obj - rowid = 000018C2 - 0001012D.004B.0016
+Although the select statement of the session terminated by the deadlock is
+usually also displayed, you can also refer to these two lines to see which
+table it is:
+
+Note 84348 - Oracle deadlocks, ORA-00060
+000016F2 [hex value] corresponds to 5874 [decimal]
+000018C2 [hex value] corresponds to 6338 [decimal]
+sqlplus "username/<passwd>"
+SQL> SELECT owner, object_name, object_id FROM DBA_OBJECTS
+WHERE object_id=5874;
+
+SQL> SELECT owner, object_name, object_id FROM DBA_OBJECTS
+WHERE object_id=6338;
+
+Is it an index?
+If no rows are displayed here, for example,
+
+Rows waited on:
+Session 39: no row
+Session 46: no row
+
+the deadlock most probably occurred while index blocks were being locked.
+
+Solution
+
+Measures to eliminate/minimize the problem:
+
+The problem, in most cases, is that the system tries to dynamically extend
+the block space, but the block is too full. INITRANS defines the static
+value reserved for each block for transaction information. However, this
+value can increase to MAXTRANS if several transactions simulaneously try to
+perform a lock. To prevent this error from occurring, you have to extend
+the INITRANS value as much as possible so that a dynamic extension is not
+required. The default value for INITRANS is 1. This is usually sufficient
+for 'standard' tables/indexes. However, it is necessary to adjust this
+value for special tables/indexes.
+
+You can use the following statement to determine the current value of
+INITRANS.
+
+SQL> SELECT table_name, owner, ini_trans, max_trans FROM dba_tables
+WHERE table_name = '<TABLE NAME>';
+
+SQL> SELECT index_name, owner, ini_trans, max_trans
+FROM dba_indexes WHERE table_name = '<TABLE NAME>';
+
+If the error occurs when jobs are being executed in parallel (usual data
+loads), the INITRANS value should be set to the maximum number of parallel
+running jobs. Otherwise, 20 is an appropriate value
+.
+1. The default value for max_trans is usually 255 for both the table and
+indexes. If a value other than 255 (0, for example) is returned for
+max_trans, increase this value to at least the adjusted INITRANS
+value. We recommend that you set max_trans to 255.
+While the value could be extended using the commands
+
+SQL> ALTER TABLE <TABLE NAME> INITRANS 20;
+SQL> ALTER INDEX "<INDEX NAME>" INITRANS 20;
+This would only apply to newly created blocks.
+
+If you have to adjust maxtrans:
+
+SQL> ALTER TABLE <TABLE NAME> maxtrans 255;
+SQL> ALTER TABLE "<INDEX NAME>" maxtrans 255;
+
+2. Check in accordance with the list below whether this is a 'Special
+database object'. If this is the case, you may also have to perform
+these actions for additional objects.
+
+3. To extend the value for 'old' blocks as well, follow the steps below:
+
+4. Extend the INITRANS/MAXTRANS values for ALL necessary objects. (These
+include tables, indexes, in the case of 'special objects' and also for
+these additional objects.)
+
+5. Export the affected table.
+
+6. Import the table.
+
+Special database objects
+Is it a partitioned table?
+Change to the INITRANS value only for reallocated
+blocks:
+In this case, if these are partitioned tables and indexes, you must
+query other DBA views to receive the values for the individual
+partitions. Then select as follows:
+
+SQL> SELECT partition_name, ini_trans, max_trans FROM
+dba_tab_partitions
+WHERE table_name = '<TABLE NAME>'
+AND table_owner = '<OWNER>';
+
+SQL> SELECT partition_name, ini_trans, max_trans FROM
+dba_ind_partitions
+WHERE index_name = '<INDEX NAME>'
+AND index_owner = '<OWNER>';
+
+For new table partitions, you must change the default INITRANS
+value:
+
+SQL> ALTER TABLE <TABLE NAME> INITRANS 20;
+
+Now use the SQL statement above with regard to the
+dba_tab_partitions view to check the value of the INI_TRANS column
+again.
+If you have not also adjusted this value after you adjust the
+default INITRANS value at table level, then you must change the
+INITRANS value for each existing table partition.
+For the indexes, the value must only be changed for the index
+itself; the values for the index partitions (and the new index
+partitions that have to be created) are automatically adjusted.
+
+SQL> ALTER table <TABLE NAME> modify partition <PARTITION NAME>
+INITRANS 20;
+SQL> ALTER INDEX "<INDEX NAME>" INITRANS 20;
+Change to the INITRANS values for old blocks and blocks
+that are to be allocated:
+This is only possible with reorganization of the affected table.
+
+Background information
+You can assign the INITRANS value when an object is created. If it
+is not assigned at that stage, a hardcoded value of 1 for tables
+and 2 for indexes is generated. Note that INITRANS defaults cannot
+be defined for the tablespace, that is, there is no INITRANS column
+in the dba_tablespaces.
+During the creation of partitioned objects, this value is saved as
+default to dba_part_indexes or in dba_part_tables.
+When object partitions are created, an INITRANS that applies only
+to the partition can also be assigned explicitly. If it is not
+assigned, the default value is generated from dba_part_tables or
+dba_part_indexes. During the initial creation of a partitioned
+object with an initial partition, two INITRANS values can
+subsequently be transferred (a default for the partitioned object
+and an actual value for the partition).
+An INITRANS value is never explicitly assigned when an object
+is created. Provided that no changes are made with DB tools, the
+hardcoded default value is generated.
+o Are some of the indexes bitmap indexes?
+The problem with bitmap indexes, as opposed to b-tree indexes, is
+
+that there is no longer a 1:1 relationship between the index record
+and the table data record. Data records in the Bitmap index are
+stored in ranges. If this type of range is now extended, the entire
+range must be locked. Deadlocks can occur if several parallel
+processes try to access the same ranges simultaneously.
+Extending the INITRANS value only helps under certain conditions in
+this case. If this occurs very frequently, you should think about
+alternatives.
+
+Is this a table with a LOB field/is this a LOB object?
+Under certain circumstances, a self-deadlock can also occur with
+LOB objects.
+In this case, the deadlock graph usually looks slightly different:
+Deadlock graph:
+---------Blocker(s)-------- ---------Waiter(s)------
+process sess. holds waits process sess. holds waits
+20017-0000010c 8 8 X 8 8 S
+session 8: DID 0001-0008-00000001
+session 8: DID 0001-0008-00000001
+Rows waited on: Session 8: no row
+There is only ONE row in the deadlock graph.
+- You can use the following statement to determine which fields
+have an LOB data type:
+
+SQL> SELECT table_name, column_name, data_type FROM
+dba_tab_columns
+where table_name='<table name>' and data_type like '%LOB';
+- You can change the INITRANS/MAXTRANS value as follows:
+SQL> ALTER table "<table name>" modify lob (<field name>)
+(index (INITRANS 20 maxtrans 255));
+- If the problem persists, you must reorganize the table as
+described above so that the change is applied to all blocks.
+
+Jafar 

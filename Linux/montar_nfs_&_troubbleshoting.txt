@@ -1,0 +1,84 @@
+mount -t nfs  10.111.18.143:/VES1P2_PREV_ORA_BKP /mnt/auxiliary
+
+
+si falla con mount.nfs: Protocol not supported:
+
+mount -o rw,vers=2  10.111.18.143:/VES1P2_PREV_ORA_BKP /mnt/auxiliary
+
+Linea en el fstab:
+10.111.18.143:/VES1P2_PREV_ORA_BKP /mnt/auxiliary nfs rw,vers=2  0 0
+
+
+
+troubbleshooting NFS
+
+root@cvs1voa70 ~]# mount -t nfs  10.111.18.143:/VES1P2_PREV_ORA_BKP /mnt/auxiliary
+mount.nfs: Protocol not supported
+[root@cvs1voa70 ~]# showmount 10.111.18.143 -e
+Export list for 10.111.18.143:
+/                    (everyone)
+/VES1P2_PREV_ORA_BKP (everyone)
+[root@cvs1voa70 ~]# vi /etc/fstab
+[root@cvs1voa70 ~]# 
+[root@cvs1voa70 ~]# 
+[root@cvs1voa70 ~]# 
+[
+root@cvs1voa70 ~]# 
+[root@cvs1voa70 ~]# mount  /mnt/auxiliary/ -v
+mount.nfs: timeout set for Fri Jan 19 11:08:47 2024
+mount.nfs: trying text-based options 'vers=4.2,addr=10.111.18.143,clientaddr=10.111.17.15'
+mount.nfs: mount(2): Protocol not supported
+mount.nfs: trying text-based options 'vers=4,minorversion=1,addr=10.111.18.143,clientaddr=10.111.17.15'
+mount.nfs: mount(2): Protocol not supported
+mount.nfs: trying text-based options 'vers=4,addr=10.111.18.143,clientaddr=10.111.17.15'
+mount.nfs: mount(2): Protocol not supported
+mount.nfs: trying text-based options 'addr=10.111.18.143'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.111.18.143 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=17
+mount.nfs: trying 10.111.18.143 prog 100005 vers 3 prot UDP port 635
+mount.nfs: mount(2): Device or resource busy
+mount.nfs: Protocol not supported
+[root@cvs1voa70 ~]#
+[root@cvs1voa70 ~]# rpcinfo  10.111.18.143 |egrep "service|nfs"
+   program version netid     address                service    owner
+    100003    3    udp       10.111.18.143.8.1      nfs        
+    100003    3    tcp       10.111.18.143.8.1      nfs        
+[root@cvs1voa70 ~]#
+1voa70 ~]# mount -o rw,vers=2  10.111.18.143:/VES1P2_PREV_ORA_BKP /mnt/auxiliary
+mount.nfs: requested NFS version or transport protocol is not supported
+[root@cvs1voa70 ~]# 
+[root@cvs1voa70 ~]# 
+[root@cvs1voa70 ~]# df -h
+Filesystem                           Size  Used Avail Use% Mounted on
+devtmpfs                              16G     0   16G   0% /dev
+tmpfs                                 16G  2.2G   14G  14% /dev/shm
+tmpfs                                 16G  1.4M   16G   1% /run
+tmpfs                                 16G     0   16G   0% /sys/fs/cgroup
+/dev/mapper/SYSvg00-lv_root          4.0G  3.0G 1023M  75% /
+/dev/mapper/SYSvg00-lv_usr           4.0G  1.7G  2.4G  42% /usr
+/dev/mapper/APLIvg00-lv_audit_01     9.8G  2.0G  7.4G  21% /u03
+/dev/mapper/APLIvg00-lv_agent_01     9.8G  7.9G  1.4G  86% /u02
+/dev/mapper/APLIvg00-lv_stage_01      40G   32G  5.9G  85% /mnt/orastage
+/dev/mapper/APLIvg00-lv_bin_01       196G   81G  106G  44% /u01
+/dev/mapper/SYSvg00-lv_tmp           2.0G  212M  1.8G  11% /tmp
+/dev/mapper/SYSvg00-lv_home          2.0G  116M  1.9G   6% /home
+/dev/mapper/SYSvg00-lv_telegraf_etc 1014M   42M  973M   5% /etc/telegraf
+/dev/vda1                            507M  341M  167M  68% /boot
+/dev/mapper/SYSvg00-lv_compute       2.0G  168M  1.9G   9% /COMPUTE
+/dev/mapper/SYSvg00-lv_var           6.0G  1.7G  4.4G  28% /var
+/dev/mapper/SYSvg00-lv_filebeat_log 1014M  117M  898M  12% /var/log/filebeat
+/dev/mapper/SYSvg00-lv_audit_log     6.0G  3.0G  3.1G  49% /var/log/audit
+/dev/mapper/SYSvg00-lv_telegraf_log  2.0G   47M  2.0G   3% /var/log/telegraf
+tmpfs                                3.2G     0  3.2G   0% /run/user/54321
+tmpfs                                3.2G     0  3.2G   0% /run/user/54322
+10.111.18.143:/VES1P2_PREV_ORA_BKP   1.1T   11G  1.1T   2% /mnt/auxiliary
+tmpfs                                3.2G     0  3.2G   0% /run/user/1276000185
+tmpfs                                3.2G     0  3.2G   0% /run/user/1000
+tmpfs                                3.2G     0  3.2G   0% /run/user/1276000182
+/dev/mapper/APLIvg00-lv_goldendate   976M  2.8M  906M   1% /mnt/goldengate
+tmpfs                                3.2G     0  3.2G   0% /run/user/1276000180
+tmpfs                                3.2G     0  3.2G   0% /run/user/1276000101
+[root@cvs1voa70 ~]# vi /etc/fstab
+[root@cvs1voa70 ~]# 
+[root@cvs1voa70 ~]#
