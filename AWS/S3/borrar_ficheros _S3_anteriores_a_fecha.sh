@@ -1,9 +1,9 @@
-export AWS_ACCESS_KEY_ID=YM8DG7IBL4PLHKE8LTKP
-export AWS_SECRET_ACCESS_KEY=jpIE0yKPwKJy5qsv6S0o3SpBZGuR2ZPp74MPrkqd
+export AWS_ACCESS_KEY_ID=xxxxxxx
+export AWS_SECRET_ACCESS_KEY=yyyyyyy
 export AWS_CA_BUNDLE=/etc/pki/tls/cert.pem
 export AWS_DEFAULT_OUTPUT=json 
 export AWS_DEFAULT_REGION=es-tc-1
-export S3_ENDPOINT=https://s3backup.es.nextgen.igrupobbva:8443
+export S3_ENDPOINT=zzzzzzz
 alias aws=/home/postgres/.local/lib/aws/bin/aws
 export accname=AesPstLIVE
 export accquota=375809638400
@@ -37,11 +37,11 @@ export bytetotb=1073741824
 
 
     export AWS_CA_BUNDLE=/etc/pki/tls/cert.pem
-    export AWS_ACCESS_KEY_ID=YM8DG7IBL4PLHKE8LTKP 
-    export AWS_SECRET_ACCESS_KEY=jpIE0yKPwKJy5qsv6S0o3SpBZGuR2ZPp74MPrkqd
+    export AWS_ACCESS_KEY_ID= xxxxxxx
+    export AWS_SECRET_ACCESS_KEY=yyyyyyy
     export AWS_DEFAULT_OUTPUT=json 
     export AWS_DEFAULT_REGION=es-tc-1
-    export S3_ENDPOINT=https://s3backup.es.nextgen.igrupobbva:8443
+    export S3_ENDPOINT=zzzzzzz
     rmDate=`date -d "16 day ago" +%F`
     filestodelete=`/home/postgres/bin/aws s3 ls --recursive s3://besbckppglive/es-live/pro/eslcp01 --endpoint-url $S3_ENDPOINT | awk '$1 < "'${rmDate}' 00:00:00" {print $4}'`
 
