@@ -1,0 +1,10 @@
+Hola, como experto desarrollador en python, me gustaria que me ayudaras a crear un programa que:
+
+teniendo un fichero de csv que contiene las siguentes columnas:
+"""Hostname""","""Architecture""","""Hostgroup""","""Product""","""Version""","""Discipline""","""Platform""","""Environment""","""Country""","""IP""","""OS""","""Creation date""","""Storage""","""Flavour""","""Description""" 
+
+Necesito que me devuelvas en uno o varios ficheros un programa escrito en python que haga lo siguiente:
+1- Muestre por pantalla los diferentes valores de """Country""" con un ordinal y pida que seleccionemos uno. 
+2- Muestre todos los """Hostgroup""" diferentes que pertenezcan a """Country""" con un ordinal y pida que seleccionesmos uno.
+3- Muestre todos los """Hostname""" diferentes que pertenezcan a """Hostgroup"""  con un ordinal y pida que seleccionesmos uno.
+4- Con el """Hostname""" seleccionado, el programa abrira una conexion ssh sin password.
